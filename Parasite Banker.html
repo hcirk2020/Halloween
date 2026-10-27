@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE BENEFICIAL OWNER — A Hive Simulation</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:#05010a;color:#e8d9ff;
+    font-family:"Courier New",ui-monospace,monospace;
+    -webkit-font-smoothing:none;
+  }
+  #bg{position:fixed;inset:0;z-index:0;display:block}
+  #vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 45%,transparent 35%,rgba(0,0,0,.88) 100%)}
+  #scan{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.10;
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.16) 0 1px,transparent 1px 3px)}
+
+  #app{position:relative;z-index:3;height:100vh;display:flex;flex-direction:column;
+    padding:10px;gap:10px}
+
+  /* ---------- HEADER ---------- */
+  header{
+    flex:0 0 auto;height:46px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;border:1px solid rgba(255,190,100,.28);
+    background:linear-gradient(180deg,rgba(14,40,32,.9),rgba(3,18,14,.92));
+    box-shadow:0 0 24px rgba(255,180,80,.15),inset 0 0 24px rgba(255,217,138,.05);
+    position:relative;
+  }
+  header:before,header:after{
+    content:"";position:absolute;width:10px;height:10px;border:2px solid #ffcf7a;
+  }
+  header:before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+  header:after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+  .h-l{font-size:13px;letter-spacing:4px;color:#ffd98a;text-shadow:0 0 12px rgba(255,200,110,.6)}
+  .h-c{font-size:12px;letter-spacing:3px;color:#8fc0a8}
+  .h-c span{color:#ffd98a;text-shadow:0 0 10px rgba(255,217,138,.8)}
+  .h-r{font-size:15px;letter-spacing:2px;color:#ffe9a8;text-shadow:0 0 12px rgba(255,210,120,.6)}
+
+  /* ---------- LAYOUT ---------- */
+  main{flex:1 1 auto;display:grid;grid-template-columns:300px 1fr;gap:10px;min-height:0}
+  #left{display:flex;flex-direction:column;gap:10px;min-height:0}
+  #right{display:flex;flex-direction:column;gap:10px;min-height:0}
+
+  .panel{
+    position:relative;border:1px solid rgba(255,190,100,.18);
+    background:linear-gradient(160deg,rgba(14,38,32,.92),rgba(3,12,10,.96));
+    box-shadow:0 0 22px rgba(255,180,80,.10),inset 0 0 30px rgba(255,217,138,.03);
+  }
+  .panel:before,.panel:after{content:"";position:absolute;width:8px;height:8px;
+    border:1px solid rgba(255,200,120,.55)}
+  .panel:before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+  .panel:after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+
+  /* ---------- PORTRAIT ---------- */
+  .portrait-panel{padding:10px;display:flex;flex-direction:column;align-items:center;
+    flex:0 0 auto}
+  #portrait{width:200px;height:250px;image-rendering:pixelated;
+    image-rendering:crisp-edges;display:block;
+    filter:drop-shadow(0 0 18px rgba(255,180,80,.30))}
+  .p-name{margin-top:6px;font-size:15px;letter-spacing:5px;color:#ffd98a;
+    text-shadow:0 0 14px rgba(255,200,110,.7)}
+  .p-sub{font-size:9px;letter-spacing:2px;color:#8fc0a8;margin-top:2px;
+    text-align:center;opacity:.85}
+
+  /* ---------- BARS ---------- */
+  .bars-panel{padding:10px 12px;display:flex;flex-direction:column;gap:7px;flex:0 0 auto}
+  .bar-row{display:flex;flex-direction:column;gap:3px}
+  .bar-top{display:flex;justify-content:space-between;font-size:9px;letter-spacing:2px}
+  .bar-top .bl{color:#8fc0a8}
+  .bar-top .bv{color:#fff;opacity:.9}
+  .bar-track{height:7px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.09);
+    overflow:hidden}
+  .bar-fill{height:100%;width:0%;transition:width .35s ease,background .35s ease}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px}
+  .chip{font-size:8.5px;letter-spacing:1.5px;padding:3px 4px;text-align:center;
+    border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);color:#7fb8a0}
+  .chip b{color:#ffd98a;font-weight:normal}
+
+  /* ---------- LOG ---------- */
+  .log-panel{flex:1 1 auto;min-height:0;padding:8px 10px;display:flex;flex-direction:column}
+  .log-title{font-size:9px;letter-spacing:3px;color:#ffd98a;margin-bottom:5px;
+    border-bottom:1px solid rgba(255,217,138,.18);padding-bottom:4px}
+  #log{flex:1 1 auto;overflow-y:auto;font-size:10px;line-height:1.45;color:#a0c0b0;
+    display:flex;flex-direction:column;gap:4px;padding-right:4px}
+  #log::-webkit-scrollbar{width:5px}
+  #log::-webkit-scrollbar-thumb{background:rgba(255,217,138,.3)}
+  .log-line{animation:slideIn .35s ease}
+  .log-line.hl{color:#ffe9a8}
+  .log-line.bad{color:#ff8095}
+  .log-line.turn{color:#6ff0ff;letter-spacing:1px;border-top:1px dashed rgba(110,240,255,.2);
+    padding-top:4px;margin-top:2px}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+  /* ---------- HIVE BAR ---------- */
+  .hive-panel{padding:12px 16px;flex:0 0 auto}
+  .hive-top{display:flex;justify-content:space-between;align-items:baseline}
+  .hive-label{font-size:11px;letter-spacing:5px;color:#ffd98a;
+    text-shadow:0 0 12px rgba(255,217,138,.6)}
+  .hive-val{font-size:22px;letter-spacing:2px;color:#fff;
+    text-shadow:0 0 18px rgba(255,217,138,.9),0 0 40px rgba(255,180,80,.6)}
+  .hive-bar{margin-top:8px;height:14px;background:rgba(0,0,0,.75);
+    border:1px solid rgba(255,217,138,.3);position:relative;overflow:hidden}
+  .hive-fill{height:100%;width:0%;
+    background:linear-gradient(90deg,#1a5a3a,#ffd98a 55%,#fff2b0);
+    box-shadow:0 0 22px rgba(255,217,138,.85),0 0 60px rgba(255,180,80,.5);
+    transition:width .5s cubic-bezier(.2,.9,.3,1)}
+  .hive-bar:after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(90deg,transparent 0 12px,rgba(0,0,0,.35) 12px 13px)}
+  .hive-sub{margin-top:6px;font-size:10px;color:#8fc0a8;letter-spacing:1px;font-style:italic}
+
+  /* ---------- ACTIONS ---------- */
+  .actions{flex:1 1 auto;min-height:0;display:grid;
+    grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:8px;
+    overflow-y:auto;overflow-x:hidden;padding-right:4px;
+    align-content:start;align-items:stretch}
+  .actions::-webkit-scrollbar{width:5px}
+  .actions::-webkit-scrollbar-thumb{background:rgba(255,217,138,.3)}
+
+  .act{
+    position:relative;border:1px solid rgba(255,190,100,.22);
+    background:linear-gradient(165deg,rgba(14,38,32,.94),rgba(3,12,10,.97));
+    padding:8px 10px;display:flex;flex-direction:column;cursor:pointer;
+    transition:transform .13s ease,border-color .2s,box-shadow .2s;
+    overflow:hidden;user-select:none;min-height:110px;
+  }
+  .act:before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+    background:linear-gradient(180deg,#ffd98a,#1a5a3a);opacity:.75}
+  .act:hover:not(.disabled){transform:translateY(-2px);
+    border-color:rgba(255,217,138,.75);
+    box-shadow:0 0 22px rgba(255,180,80,.30),inset 0 0 26px rgba(255,217,138,.08)}
+  .act:active:not(.disabled){transform:translateY(0) scale(.985)}
+  .act.disabled{opacity:.34;cursor:not-allowed;filter:grayscale(.55)}
+  .act.shake{animation:shake .3s}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}
+    50%{transform:translateX(5px)}75%{transform:translateX(-3px)}
+  }
+  .act-tag{font-size:8px;letter-spacing:2px;color:#ffd98a;opacity:.9}
+  .act-name{font-size:12px;letter-spacing:1px;color:#ffe9a8;margin-top:2px;
+    text-shadow:0 0 10px rgba(255,200,110,.35)}
+  .act-desc{font-size:8.5px;line-height:1.35;color:#7fb8a0;margin-top:4px;
+    flex:1 1 auto;overflow:hidden}
+  .act-foot{display:flex;justify-content:space-between;align-items:center;
+    font-size:10px;margin-top:4px}
+  .cost{color:#ffd98a}
+  .apc{color:#6ff0ff}
+
+  /* ---------- FOOTER ---------- */
+  .foot{flex:0 0 auto;display:flex;align-items:center;gap:14px}
+  #endturn{
+    flex:0 0 auto;padding:11px 30px;font-family:inherit;font-size:12px;letter-spacing:4px;
+    color:#ffe9a8;background:linear-gradient(180deg,rgba(20,60,44,.95),rgba(3,16,12,.98));
+    border:1px solid rgba(255,180,90,.55);cursor:pointer;
+    box-shadow:0 0 20px rgba(255,140,60,.18),inset 0 0 20px rgba(255,217,138,.06);
+    transition:.18s;
+  }
+  #endturn:hover{background:linear-gradient(180deg,rgba(30,90,64,.95),rgba(6,26,20,.98));
+    box-shadow:0 0 34px rgba(255,217,138,.40)}
+  #endturn:active{transform:scale(.97)}
+  #aprow{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:2px;color:#7fb8a0}
+  #aprow .pips{font-size:15px;letter-spacing:3px;color:#6ff0ff;
+    text-shadow:0 0 12px rgba(110,240,255,.8)}
+  #aprow .pips .off{color:rgba(110,240,255,.18);text-shadow:none}
+
+  /* ---------- OVERLAY ---------- */
+  #overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;
+    justify-content:center;background:rgba(2,6,4,.90);backdrop-filter:blur(3px)}
+  #overlay.hidden{display:none}
+  .ov-box{max-width:640px;padding:44px 52px;text-align:center;
+    border:1px solid rgba(255,180,90,.45);
+    background:linear-gradient(160deg,rgba(14,42,32,.98),rgba(3,10,8,.99));
+    box-shadow:0 0 90px rgba(255,217,138,.30),inset 0 0 70px rgba(255,180,80,.10);
+    animation:ovIn .6s ease}
+  @keyframes ovIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+  .ov-box h2{font-size:26px;letter-spacing:8px;margin-bottom:18px;
+    text-shadow:0 0 30px currentColor}
+  .ov-box p{font-size:13px;line-height:1.85;color:#a0c0b0;letter-spacing:.5px}
+  .ov-box .big{font-size:19px;color:#ffd98a;letter-spacing:3px;margin:14px 0;
+    text-shadow:0 0 20px rgba(255,200,110,.8)}
+  .ov-box button{margin-top:26px;padding:12px 34px;font-family:inherit;font-size:12px;
+    letter-spacing:4px;color:#ffe9a8;background:rgba(20,60,44,.7);
+    border:1px solid rgba(255,180,90,.5);cursor:pointer;transition:.18s}
+  .ov-box button:hover{background:rgba(30,90,64,.8);box-shadow:0 0 30px rgba(255,217,138,.5)}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="vignette"></div>
+<div id="scan"></div>
+
+<div id="app">
+  <header>
+    <div class="h-l">◆ THE BENEFICIAL OWNER</div>
+    <div class="h-c">CYCLE <span id="turn">1</span></div>
+    <div class="h-r" id="cap">¤ 120</div>
+  </header>
+
+  <main>
+    <aside id="left">
+      <div class="panel portrait-panel">
+        <canvas id="portrait" width="120" height="150"></canvas>
+        <div class="p-name">VESPER</div>
+        <div class="p-sub">Sovereign of the Unseen Ledger</div>
+      </div>
+
+      <div class="panel bars-panel" id="bars"></div>
+
+      <div class="panel log-panel">
+        <div class="log-title">◇ TRANSMISSIONS</div>
+        <div id="log"></div>
+      </div>
+    </aside>
+
+    <section id="right">
+      <div class="panel hive-panel">
+        <div class="hive-top">
+          <span class="hive-label">HIVE INTEGRATION</span>
+          <span class="hive-val" id="ctrlval">0.0000000%</span>
+        </div>
+        <div class="hive-bar"><div class="hive-fill" id="ctrlfill"></div></div>
+        <div class="hive-sub" id="hivesub">The hive does not yet dream of you.</div>
+      </div>
+
+      <div class="actions" id="actions"></div>
+
+      <div class="foot">
+        <button id="endturn">END CYCLE ▶</button>
+        <div id="aprow">
+          <span>ACTIONS</span>
+          <span class="pips" id="pips"></span>
+          <span id="aptext"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="overlay" class="hidden">
+  <div class="ov-box">
+    <h2 id="ov-title"></h2>
+    <div class="big" id="ov-big"></div>
+    <p id="ov-text"></p>
+    <button id="ov-btn">BEGIN AGAIN</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   THE BENEFICIAL OWNER — remastered
+   ============================================================ */
+
+/* ---------------- EXPRESSION TABLE ---------------- */
+const EXP = {
+  neutral:   { browIn: 0,   eyeH: 1.00, mouth:  0.0, mouthW: 1.00, pupil: 1.00, blush: 0.30, glow: 1.0 },
+  smug:      { browIn: -1,  eyeH: 0.82, mouth: -2.5, mouthW: 1.10, pupil: 0.90, blush: 0.40, glow: 1.2 },
+  angry:     { browIn: 2.5, eyeH: 1.05, mouth:  1.8, mouthW: 1.00, pupil: 0.80, blush: 0.15, glow: 1.4 },
+  sinister:  { browIn: 1.5, eyeH: 0.72, mouth: -3.5, mouthW: 1.15, pupil: 0.70, blush: 0.20, glow: 1.5 },
+  worried:   { browIn: -2,  eyeH: 1.20, mouth:  1.2, mouthW: 0.95, pupil: 1.20, blush: 0.15, glow: 0.7 },
+  serene:    { browIn: -0.5,eyeH: 0.95, mouth: -1.2, mouthW: 1.00, pupil: 1.10, blush: 0.55, glow: 1.1 },
+  manic:     { browIn: -2.5,eyeH: 1.35, mouth: -5.0, mouthW: 1.25, pupil: 1.40, blush: 0.25, glow: 1.8 },
+  cold:      { browIn: 0.5, eyeH: 0.80, mouth:  0.0, mouthW: 1.00, pupil: 0.85, blush: 0.10, glow: 1.3 },
+};
+
+/* ---------------- STATE ---------------- */
+const S = {};
+function resetState(){
+  S.turn       = 1;
+  S.ap         = 4;
+  S.apMax      = 4;
+  S.capital    = 120;
+  S.control    = 0;
+  S.exposure   = 4;
+  S.secrecy    = 25;
+  S.unrest     = 10;
+  S.vitality   = 100;
+  S.media      = 0;
+  S.military   = 0;
+  S.blackmail  = 0;
+  S.nepotism   = 0;
+  S.over       = false;
+  S.winFlag    = false;
+  S.log        = [];
+  S.expression = 'neutral';
+  S.expressionUntil = 0;
+}
+
+/* ---------------- HELPERS ---------------- */
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const gainMul  = ()=> 1 + (S.media + S.military + S.blackmail)/150;
+const resist   = ()=> 1 - 0.75*Math.pow(S.control/100, 2);
+
+function gainCtrl(raw){
+  const before = S.control;
+  S.control = clamp(S.control + raw * gainMul() * resist(), 0, 100);
+  return S.control - before;
+}
+function fmtControl(){
+  const v = Math.min(S.control, 99.9999999);
+  return (Math.floor(v*1e7)/1e7).toFixed(7);
+}
+
+/* ---------------- ACTIONS ---------------- */
+const ACTIONS = [
+  { id:'print', tag:'MONEY PRINTING', name:'Print the Mirage', cost:0, ap:1, expression:'smug',
+    desc:'Conjure liquidity from the void. The hive wakes richer — and angrier.',
+    fx(){ const g = Math.round(60 + S.control*1.5 + S.blackmail*2);
+      const u = 3 + S.control*0.06; S.capital += g; S.unrest += u; S.exposure += 1;
+      return `+¤${g} conjured · unrest +${u.toFixed(1)}`; } },
+
+  { id:'dolls', tag:'SUBVERSION', name:'Russian Dolls', cost:30, ap:1, expression:'cold',
+    desc:'A shell inside a trust inside a foundation. Every layer needs a new warrant.',
+    fx(){ S.secrecy = Math.min(100, S.secrecy + 18); S.exposure = Math.max(0, S.exposure - 6);
+      const d = gainCtrl(0.3);
+      return `secrecy +18 · exposure −6 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'whisper', tag:'MEDIA CONTROL', name:'Whisper Engine', cost:50, ap:1, expression:'sinister',
+    desc:'Own every screen and every silence. Truth becomes a subscription tier.',
+    fx(){ S.media = Math.min(100, S.media + 9); S.exposure = Math.max(0, S.exposure - 7);
+      S.unrest = Math.max(0, S.unrest - 5); const d = gainCtrl(0.3);
+      return `media +9 · exposure −7 · unrest −5 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'iron', tag:'MILITARY CONTROL', name:'The Iron Oath', cost:75, ap:1, expression:'cold',
+    desc:'Buy the boots. They will never ask who signs the cheque.',
+    fx(){ S.military = Math.min(100, S.military + 9); S.unrest = Math.max(0, S.unrest - 10);
+      S.exposure += 2.5; const d = gainCtrl(0.4);
+      return `military +9 · unrest −10 · exposure +2.5 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'sins', tag:'MUTUAL BLACKMAIL', name:'Ledger of Sins', cost:40, ap:1, expression:'sinister',
+    desc:'Everyone signs. Everyone is owned. Extortion pays compounding dividends.',
+    fx(){ S.blackmail = Math.min(100, S.blackmail + 8);
+      const take = Math.round(S.blackmail * 2); S.capital += take; S.exposure += 1.5;
+      const d = gainCtrl(0.5);
+      return `blackmail +8 · +¤${take} extorted · hive +${d.toFixed(3)}%`; } },
+
+  { id:'cloward', tag:'CLOWARD–PIVEN', name:'Manufactured Crisis', cost:0, ap:1, expression:'manic',
+    desc:'Overload every system until collapse feels like rescue. The hive begs for order.',
+    fx(){ S.unrest += 15; S.exposure += 4;
+      const d = gainCtrl(0.8 + S.unrest*0.03);
+      return `unrest +15 · exposure +4 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'blood', tag:'NEPOTISM', name:'Bloodline', cost:95, ap:1, expression:'smug',
+    desc:'Install kin in the invisible chairs. Loyalty compounds like interest.',
+    fx(){ S.nepotism += 1; S.capital += 25; S.exposure += 3;
+      const d = gainCtrl(0.4);
+      return `kin installed (${S.nepotism}) · hive +${d.toFixed(3)}%`; } },
+
+  { id:'excess', tag:'SYBARITISM', name:'Rite of Excess', cost:60, ap:1, expression:'serene',
+    desc:'Feed the vessel, or the god inside it begins to rot.',
+    fx(){ S.vitality = clamp(S.vitality + 35, 0, 100); S.exposure += 5;
+      S.unrest = Math.max(0, S.unrest - 3); const d = gainCtrl(1.0);
+      let boon = ''; const r = Math.random();
+      if(r < .33){ S.capital += 70; boon = '· ¤70 of gifts'; }
+      else if(r < .66){ S.secrecy = Math.min(100,S.secrecy+14); boon = '· secrecy +14'; }
+      else { S.blackmail = Math.min(100,S.blackmail+10); boon = '· blackmail +10'; }
+      return `vitality +35 · hive +${d.toFixed(3)}% ${boon}`; } },
+
+  { id:'siphon', tag:'MONOPOLY ON MONEY', name:'Siphon the Vaults', cost:0, ap:1, expression:'smug',
+    desc:'Skim the hidden trillions directly. Nobody will ever know it was there.',
+    req(){ return S.control >= 15; }, reqText:'requires hive ≥ 15%',
+    fx(){ const g = Math.round(S.control * 4); S.capital += g; S.exposure += 6; S.unrest += 4;
+      return `+¤${g} siphoned · exposure +6 · unrest +4`; } },
+
+  /* ---------------- NEW ACTIONS ---------------- */
+  { id:'coup', tag:'COUP', name:'The Iron Hand', cost:150, ap:2, expression:'manic',
+    desc:'Send the boots into the palace. Once the tanks roll, no ledger is secret anymore.',
+    req(){ return S.military >= 40; }, reqText:'requires military ≥ 40',
+    fx(){ S.military = Math.max(0, S.military - 25); S.unrest += 25; S.exposure += 20;
+      const d = gainCtrl(4.0); S.capital += 200;
+      return `military −25 · unrest +25 · exposure +20 · +¤200 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'opposition', tag:'CONTROLLED OPPOSITION', name:'The Loyal Rebels', cost:70, ap:1, expression:'sinister',
+    desc:'Fund the protests against yourself. They chant what you wrote. The hive mistakes conflict for freedom.',
+    req(){ return S.media >= 30; }, reqText:'requires media ≥ 30',
+    fx(){ S.unrest = Math.max(0, S.unrest - 20); S.exposure = Math.max(0, S.exposure - 5);
+      S.media = Math.min(100, S.media + 4); const d = gainCtrl(1.5);
+      return `unrest −20 · exposure −5 · media +4 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'surveillance', tag:'SURVEILLANCE STATE', name:'The Panopticon', cost:90, ap:1, expression:'cold',
+    desc:'Every camera, every transaction, every whisper on every network. Nothing moves unseen — except you.',
+    fx(){ S.exposure = Math.max(0, S.exposure - 25); S.secrecy = Math.min(100, S.secrecy + 15);
+      S.unrest += 10; S.military = Math.min(100, S.military + 6); const d = gainCtrl(1.2);
+      return `exposure −25 · secrecy +15 · unrest +10 · military +6 · hive +${d.toFixed(3)}%`; } },
+
+  { id:'fascisto', tag:'FASCISTO-COMMUNISM', name:'The Red-Black Synthesis', cost:120, ap:2, expression:'manic',
+    desc:'Nationalize the corporations. Corporatize the nation. The state and the firm become one monstrous body that owns every soul in the hive.',
+    fx(){ S.capital += 180; S.unrest += 20; S.exposure += 8;
+      S.military = Math.min(100, S.military + 5);
+      S.media = Math.min(100, S.media + 5);
+      S.blackmail = Math.min(100, S.blackmail + 5);
+      const d = gainCtrl(3.0);
+      return `+¤180 · unrest +20 · exposure +8 · hive +${d.toFixed(3)}%`; } },
+];
+
+/* ---------------- LOG ---------------- */
+const logEl = document.getElementById('log');
+function log(text, cls=''){
+  S.log.unshift({text, cls});
+  if(S.log.length > 60) S.log.pop();
+  renderLog();
+}
+function renderLog(){
+  logEl.innerHTML = S.log.map(e=>
+    `<div class="log-line ${e.cls}">› ${e.text}</div>`).join('');
+}
+
+/* ---------------- DOM ---------------- */
+const el = {
+  turn: document.getElementById('turn'),
+  cap:  document.getElementById('cap'),
+  ctrlval: document.getElementById('ctrlval'),
+  ctrlfill: document.getElementById('ctrlfill'),
+  hivesub: document.getElementById('hivesub'),
+  actions: document.getElementById('actions'),
+  pips: document.getElementById('pips'),
+  aptext: document.getElementById('aptext'),
+  bars: document.getElementById('bars'),
+  endturn: document.getElementById('endturn'),
+  overlay: document.getElementById('overlay'),
+  ovTitle: document.getElementById('ov-title'),
+  ovBig: document.getElementById('ov-big'),
+  ovText: document.getElementById('ov-text'),
+  ovBtn: document.getElementById('ov-btn'),
+};
+
+const BARS = [
+  {k:'vitality', label:'VITALITY', c1:'#2bff8f', c2:'#8affc8'},
+  {k:'secrecy',  label:'SECRECY',  c1:'#1fd6ff', c2:'#8ff4ff'},
+  {k:'unrest',   label:'UNREST',   c1:'#ff9a2e', c2:'#ffd07a'},
+  {k:'exposure', label:'EXPOSURE', c1:'#ff2e5b', c2:'#ff8ea6'},
+];
+
+function buildStaticUI(){
+  el.bars.innerHTML = BARS.map(b=>`
+    <div class="bar-row">
+      <div class="bar-top"><span class="bl">${b.label}</span>
+        <span class="bv" id="v-${b.k}">0</span></div>
+      <div class="bar-track"><div class="bar-fill" id="f-${b.k}"></div></div>
+    </div>`).join('') + `
+    <div class="chips">
+      <div class="chip">MEDIA <b id="c-media">0</b></div>
+      <div class="chip">MILITARY <b id="c-military">0</b></div>
+      <div class="chip">BLACKMAIL <b id="c-blackmail">0</b></div>
+      <div class="chip">KIN <b id="c-nepotism">0</b></div>
+    </div>`;
+
+  el.actions.innerHTML = ACTIONS.map(a=>`
+    <div class="act" data-id="${a.id}">
+      <div class="act-tag">${a.tag}</div>
+      <div class="act-name">${a.name}</div>
+      <div class="act-desc">${a.desc}</div>
+      <div class="act-foot">
+        <span class="cost">¤${a.cost}</span>
+        <span class="apc">◆${a.ap}</span>
+      </div>
+    </div>`).join('');
+
+  el.actions.querySelectorAll('.act').forEach(node=>{
+    node.addEventListener('click', ()=>doAction(node.dataset.id, node));
+  });
+}
+
+function canDo(a){
+  if(S.over) return false;
+  if(S.ap < a.ap) return false;
+  if(S.capital < a.cost) return false;
+  if(a.req && !a.req()) return false;
+  return true;
+}
+
+function render(){
+  el.turn.textContent = S.turn;
+  el.cap.textContent = '¤ ' + Math.round(S.capital).toLocaleString();
+
+  el.ctrlval.textContent = fmtControl() + '%';
+  el.ctrlfill.style.width = clamp(S.control,0,100) + '%';
+  el.hivesub.textContent = hiveFlavor();
+
+  let pips = '';
+  for(let i=0;i<S.apMax;i++){
+    pips += i < S.ap ? '◆' : '<span class="off">◆</span>';
+  }
+  el.pips.innerHTML = pips;
+  el.aptext.textContent = `${S.ap} / ${S.apMax}`;
+
+  BARS.forEach(b=>{
+    const v = clamp(S[b.k],0,100);
+    const fill = document.getElementById('f-'+b.k);
+    fill.style.width = v + '%';
+    let col1 = b.c1, col2 = b.c2;
+    if((b.k==='exposure'||b.k==='unrest') && v > 70){ col1='#ff0033'; col2='#ff6b6b'; }
+    fill.style.background = `linear-gradient(90deg,${col1},${col2})`;
+    fill.style.boxShadow = `0 0 12px ${col1}99`;
+    document.getElementById('v-'+b.k).textContent = Math.round(v) + '%';
+  });
+
+  document.getElementById('c-media').textContent = Math.round(S.media);
+  document.getElementById('c-military').textContent = Math.round(S.military);
+  document.getElementById('c-blackmail').textContent = Math.round(S.blackmail);
+  document.getElementById('c-nepotism').textContent = S.nepotism;
+
+  el.actions.querySelectorAll('.act').forEach(node=>{
+    const a = ACTIONS.find(x=>x.id===node.dataset.id);
+    node.classList.toggle('disabled', !canDo(a));
+  });
+}
+
+function hiveFlavor(){
+  const c = S.control;
+  if(c < 5)    return 'The hive does not yet dream of you.';
+  if(c < 15)   return 'A few clerks shiver without knowing why.';
+  if(c < 30)   return 'Shell companies bloom like fungi across the islands.';
+  if(c < 50)   return 'Half the world\u2019s ledger now bends toward your hand.';
+  if(c < 70)   return 'Prime ministers check their phones and feel watched.';
+  if(c < 85)   return 'The hive hums your name in its sleep.';
+  if(c < 95)   return 'Only the surface remains. Beneath it, everything is you.';
+  if(c < 99.9) return 'The last free minds are being quietly rewired.';
+  return 'The hive is complete. You are the only weather left.';
+}
+
+/* ---------------- ACTION EXECUTION ---------------- */
+function doAction(id, node){
+  const a = ACTIONS.find(x=>x.id===id);
+  if(!a) return;
+  if(!canDo(a)){
+    node.classList.remove('shake');
+    void node.offsetWidth;
+    node.classList.add('shake');
+    S.expression = 'angry';
+    S.expressionUntil = performance.now() + 1200;
+    if(a.req && !a.req()) log(a.reqText || 'Not yet possible.', 'bad');
+    else if(S.capital < a.cost) log('Not enough capital. Print more.', 'bad');
+    else if(S.ap < a.ap) log('No actions remaining this cycle.', 'bad');
+    return;
+  }
+  S.capital -= a.cost;
+  S.ap -= a.ap;
+  if(a.expression){
+    S.expression = a.expression;
+    S.expressionUntil = performance.now() + 2600;
+  }
+  const msg = a.fx();
+  log(`<b style="color:#ffd98a">${a.name}</b> — ${msg}`, 'hl');
+  clampAll();
+  checkEnd();
+  render();
+}
+
+function clampAll(){
+  S.exposure = clamp(S.exposure, 0, 100);
+  S.unrest   = clamp(S.unrest, 0, 100);
+  S.vitality = clamp(S.vitality, 0, 100);
+  S.secrecy  = clamp(S.secrecy, 0, 100);
+  S.capital  = Math.max(0, S.capital);
+}
+
+/* ---------------- TURN END ---------------- */
+const HEADLINES = [
+  'A Caribbean registry "loses" ten thousand files overnight.',
+  'A finance minister resigns; his villa was never on paper.',
+  'Three banks quietly merge into a name nobody recognises.',
+  'A whistleblower is discredited by six outlets at once.',
+  'Border agents find a jet with no passenger manifest.',
+  'A central bank prints "emergency liquidity" for the ninth time.',
+  'A senator votes against a bill he drafted. Nobody notices.',
+  'A charity for orphans routes ¤40m through Liechtenstein.',
+  'Two generals retire the same week, to the same island.',
+  'A media mogul buys a paper, then deletes its archive.',
+  'A trust in South Dakota names a trustee with no face.',
+  'A union leader is photographed on a yacht he cannot afford.',
+];
+
+function endTurn(){
+  if(S.over) return;
+
+  const passiveRaw = S.media*0.012 + S.military*0.015 + S.blackmail*0.02 + S.nepotism*0.25;
+  const dPassive = gainCtrl(passiveRaw);
+
+  const inc = Math.round(20 + S.nepotism*15 + S.blackmail*3 + S.control*0.8);
+  S.capital += inc;
+
+  S.unrest += 1 + S.control*0.1 - S.media*0.05 - S.military*0.09;
+  S.exposure += S.control*0.05 - S.secrecy*0.09 - S.media*0.06 - S.military*0.02;
+
+  S.secrecy = Math.max(0, S.secrecy - 6);
+  S.vitality -= 9;
+  if(S.vitality < 30) S.exposure += 3;
+
+  clampAll();
+
+  log(`— CYCLE ${S.turn} ENDS — income ¤${inc} · hive +${dPassive.toFixed(3)}%`, 'turn');
+  if(Math.random() < 0.55){
+    log(HEADLINES[Math.floor(Math.random()*HEADLINES.length)], '');
+  }
+  if(S.vitality < 35) log('Your vessel is failing. The flesh remembers what you did.', 'bad');
+  if(S.unrest > 75) log('The hive is restless. Riot-script algorithms are trending.', 'bad');
+  if(S.exposure > 75) log('Investigators are circling. The light is getting closer.', 'bad');
+  if(S.secrecy < 15) log('Your shell structure is thinning. New dolls are needed.', 'bad');
+
+  S.turn++;
+  S.ap = S.apMax;
+
+  checkEnd();
+  render();
+}
+
+/* ---------------- GAME OVER ---------------- */
+function checkEnd(){
+  if(S.over) return;
+  if(S.control >= 99.9999999){ S.control = 99.9999999; gameOver('win'); }
+  else if(S.exposure >= 100){ gameOver('exposure'); }
+  else if(S.unrest >= 100){ gameOver('unrest'); }
+  else if(S.vitality <= 0){ gameOver('vitality'); }
+}
+
+function gameOver(kind){
+  S.over = true;
+  el.overlay.classList.remove('hidden');
+  const T = el.ovTitle, B = el.ovBig, P = el.ovText;
+
+  if(kind === 'win'){
+    S.winFlag = true;
+    S.expression = 'serene'; S.expressionUntil = performance.now() + 60000;
+    T.textContent = 'THE HIVE IS COMPLETE';
+    T.style.color = '#ffd98a';
+    B.textContent = 'HIVE INTEGRATION: 99.9999999%';
+    P.innerHTML =
+      'Every vault, every trust, every nominee director, every private letter of intent — '+
+      'all of it hums with a single will. Yours.<br><br>'+
+      'You are no longer a person who owns things. You are the ownership itself. '+
+      'The remaining 0.0000001% will not notice the difference, and that is the point.<br><br>'+
+      '<span style="color:#ffd98a">Long may the ledger balance in your favour.</span>';
+  } else if(kind === 'exposure'){
+    S.expression = 'worried'; S.expressionUntil = performance.now() + 60000;
+    T.textContent = 'THE LIGHT FINDS YOU';
+    T.style.color = '#ff5c7a';
+    B.textContent = 'EXPOSURE: 100%';
+    P.innerHTML =
+      'A journalist with a leaked hard drive. A junior analyst with a conscience. '+
+      'It does not matter which — the chain of dolls finally unwinds.<br><br>'+
+      'Your name is read aloud on every channel you once owned. The vaults seal. '+
+      'The hive remembers being a hive, and turns to look at you.';
+  } else if(kind === 'unrest'){
+    S.expression = 'angry'; S.expressionUntil = performance.now() + 60000;
+    T.textContent = 'THE HIVE AWAKENS';
+    T.style.color = '#ffa33c';
+    B.textContent = 'UNREST: 100%';
+    P.innerHTML =
+      'You overloaded the systems too far, too fast. The crisis stopped being useful '+
+      'and became weather.<br><br>'+
+      'They come with pitchforks made of spreadsheets. They burn the registry offices first. '+
+      'Somewhere a nominee director is smiling for the last time.';
+  } else {
+    S.expression = 'worried'; S.expressionUntil = performance.now() + 60000;
+    T.textContent = 'ROT FROM WITHIN';
+    T.style.color = '#a05cff';
+    B.textContent = 'VITALITY: 0';
+    P.innerHTML =
+      'You starved the vessel while feeding the empire. The flesh beneath the silk '+
+      'finally gave out.<br><br>'+
+      'The hive continues without you — automatic, indifferent, perfectly efficient. '+
+      'A trust in the Cayman Islands still names you as beneficiary. It pays out to no one.';
+  }
+
+  log('── SIMULATION TERMINATED ──', 'bad');
+}
+
+/* ---------------- INPUT ---------------- */
+document.addEventListener('keydown', e=>{
+  if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); endTurn(); return; }
+  const n = parseInt(e.key, 10);
+  if(n >= 1 && n <= 9){
+    const a = ACTIONS[n-1];
+    if(a){
+      const node = el.actions.querySelector(`[data-id="${a.id}"]`);
+      doAction(a.id, node);
+    }
+  }
+});
+el.endturn.addEventListener('click', endTurn);
+el.ovBtn.addEventListener('click', ()=>{
+  el.overlay.classList.add('hidden');
+  startGame();
+});
+
+/* ============================================================
+   BACKGROUND
+   ============================================================ */
+const bg = document.getElementById('bg');
+const g  = bg.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const stars = [];
+
+function resizeBG(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  bg.width = W * DPR; bg.height = H * DPR;
+  bg.style.width = W + 'px'; bg.style.height = H + 'px';
+  g.setTransform(DPR,0,0,DPR,0,0);
+
+  stars.length = 0;
+  const count = Math.floor((W*H)/14000);
+  for(let i=0;i<count;i++){
+    stars.push({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.6 + 0.3,
+      s: Math.random()*0.25 + 0.05,
+      p: Math.random()*Math.PI*2,
+      hue: Math.random() < .6 ? 45 : 160
+    });
+  }
+}
+window.addEventListener('resize', resizeBG);
+resizeBG();
+
+function drawBackground(t){
+  const grd = g.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#04120c');
+  grd.addColorStop(0.45,'#0a2418');
+  grd.addColorStop(1,'#02060a');
+  g.fillStyle = grd;
+  g.fillRect(0,0,W,H);
+
+  g.globalCompositeOperation = 'lighter';
+  const cols = [
+    ['rgba(255,217,138,0.10)','rgba(255,217,138,0)'],
+    ['rgba(40,200,140,0.08)','rgba(40,200,140,0)'],
+    ['rgba(255,180,60,0.06)','rgba(255,180,60,0)']
+  ];
+  for(let i=0;i<3;i++){
+    const ph = t*0.00022 + i*2.1;
+    const yBase = H*(0.22 + i*0.19);
+    g.beginPath();
+    g.moveTo(-40, yBase);
+    for(let x=-40; x<=W+40; x+=18){
+      const y = yBase
+        + Math.sin(x*0.0038 + ph)*70
+        + Math.sin(x*0.011  - ph*1.7)*26
+        + Math.sin(x*0.0009 + ph*0.6)*40;
+      g.lineTo(x, y);
+    }
+    g.lineTo(W+40, H+40); g.lineTo(-40, H+40); g.closePath();
+    const rg = g.createLinearGradient(0, yBase-140, 0, yBase+380);
+    rg.addColorStop(0, cols[i][0]);
+    rg.addColorStop(1, cols[i][1]);
+    g.fillStyle = rg;
+    g.fill();
+  }
+  g.globalCompositeOperation = 'source-over';
+
+  g.save();
+  g.translate(W/2, H*0.52);
+  g.globalCompositeOperation = 'lighter';
+  g.rotate(t*0.00004);
+  for(let r=0;r<3;r++){
+    const rad = Math.min(W,H)*(0.34 + r*0.14);
+    const sides = 6 + r*2;
+    g.beginPath();
+    for(let i=0;i<=sides;i++){
+      const a = (i/sides)*Math.PI*2 + r*0.4;
+      const x = Math.cos(a)*rad, y = Math.sin(a)*rad*0.82;
+      i ? g.lineTo(x,y) : g.moveTo(x,y);
+    }
+    g.strokeStyle = `rgba(255,217,138,${0.06 - r*0.014})`;
+    g.lineWidth = 1.4;
+    g.stroke();
+  }
+  g.restore();
+
+  g.globalCompositeOperation = 'lighter';
+  for(const s of stars){
+    s.y -= s.s;
+    if(s.y < -6){ s.y = H + 6; s.x = Math.random()*W; }
+    const tw = 0.35 + 0.65*Math.abs(Math.sin(t*0.001 + s.p));
+    g.fillStyle = `hsla(${s.hue}, 90%, 70%, ${0.20*tw})`;
+    g.fillRect(s.x, s.y, s.r, s.r);
+  }
+  g.globalCompositeOperation = 'source-over';
+}
+
+/* ============================================================
+   PORTRAIT — VESPER (silver hair, gold monocle, no halo)
+   ============================================================ */
+const pcv = document.getElementById('portrait');
+const p   = pcv.getContext('2d');
+let blinkTimer = 0, blinkUntil = 0;
+
+function drawPortrait(t, expr, exprName){
+  const W2 = 120, H2 = 150;
+  p.clearRect(0,0,W2,H2);
+
+  const danger = S.exposure > 60;
+
+  // --- aura ---
+  const aura = p.createRadialGradient(60,72,8,60,72,88);
+  aura.addColorStop(0, danger ? 'rgba(255,40,80,.30)' : 'rgba(255,180,80,.26)');
+  aura.addColorStop(0.6, danger ? 'rgba(120,10,40,.12)' : 'rgba(160,100,20,.10)');
+  aura.addColorStop(1, 'rgba(0,0,0,0)');
+  p.fillStyle = aura;
+  p.fillRect(0,0,W2,H2);
+
+  // --- back hair (silver, straight, long) ---
+  p.fillStyle = '#2a2635';
+  p.beginPath();
+  p.moveTo(60,12);
+  p.bezierCurveTo(30,14, 22,44, 18,80);
+  p.bezierCurveTo(15,112, 12,138, 6,150);
+  p.lineTo(114,150);
+  p.bezierCurveTo(108,138, 105,112, 102,80);
+  p.bezierCurveTo(98,44, 90,14, 60,12);
+  p.closePath();
+  p.fill();
+
+  p.strokeStyle = 'rgba(200,190,220,.30)';
+  p.lineWidth = 0.8;
+  p.beginPath();
+  p.moveTo(24,60); p.bezierCurveTo(20,90,18,120,12,148);
+  p.moveTo(96,60); p.bezierCurveTo(100,90,102,120,108,148);
+  p.stroke();
+
+  // --- high-collar power suit ---
+  const suit = p.createLinearGradient(0,96,0,150);
+  suit.addColorStop(0,'#0a2a24');
+  suit.addColorStop(1,'#02100c');
+  p.fillStyle = suit;
+  p.beginPath();
+  p.moveTo(4,150);
+  p.bezierCurveTo(12,112, 36,96, 60,96);
+  p.bezierCurveTo(84,96, 108,112, 116,150);
+  p.closePath();
+  p.fill();
+
+  // gold collar trim
+  p.strokeStyle = '#ffd98a';
+  p.lineWidth = 1.2;
+  p.beginPath();
+  p.moveTo(36,100);
+  p.quadraticCurveTo(60,118,84,100);
+  p.stroke();
+
+  // collar wings
+  p.fillStyle = '#0f3a30';
+  p.beginPath(); p.moveTo(36,100); p.lineTo(30,108); p.lineTo(44,112); p.closePath(); p.fill();
+  p.beginPath(); p.moveTo(84,100); p.lineTo(90,108); p.lineTo(76,112); p.closePath(); p.fill();
+
+  // --- neck ---
+  p.fillStyle = '#e0d0d0';
+  p.fillRect(53,82,14,16);
+  p.fillStyle = '#c0a8b0';
+  p.fillRect(53,82,14,4);
+
+  // --- face (sharp, cold) ---
+  p.fillStyle = '#f0e2e4';
+  p.beginPath();
+  p.moveTo(60,26);
+  p.bezierCurveTo(75,26, 82,40, 81,54);
+  p.bezierCurveTo(80,68, 72,80, 60,86);
+  p.bezierCurveTo(48,80, 40,68, 39,54);
+  p.bezierCurveTo(38,40, 45,26, 60,26);
+  p.closePath();
+  p.fill();
+
+  // shading
+  p.fillStyle = 'rgba(160,140,170,.16)';
+  p.beginPath();
+  p.moveTo(60,26);
+  p.bezierCurveTo(75,26, 82,40, 81,54);
+  p.bezierCurveTo(80,68, 72,80, 60,86);
+  p.lineTo(60,26);
+  p.closePath();
+  p.fill();
+
+  // cheekbone shading
+  p.fillStyle = 'rgba(140,100,120,.10)';
+  p.beginPath(); p.ellipse(44,68,8,3,0.15,0,Math.PI*2); p.fill();
+  p.beginPath(); p.ellipse(76,68,8,3,-0.15,0,Math.PI*2); p.fill();
+
+  // --- blush ---
+  const blushA = expr.blush;
+  p.fillStyle = `rgba(255,110,150,${0.30*blushA})`;
+  p.beginPath(); p.ellipse(44,70,6,2.8,0,0,Math.PI*2); p.fill();
+  p.beginPath(); p.ellipse(76,70,6,2.8,0,0,Math.PI*2); p.fill();
+
+  // --- eyes ---
+  const blinking = t < blinkUntil;
+  const eyeCol = danger ? '#ff2e5b' : '#ffd98a';
+  const eyeCol2 = danger ? '#ffb0b0' : '#fff2b0';
+  drawEye(47,58,13,15*expr.eyeH, blinking,eyeCol,eyeCol2,expr);
+  drawEye(73,58,13,15*expr.eyeH, blinking,eyeCol,eyeCol2,expr);
+
+  // --- monocle on right eye ---
+  p.strokeStyle = '#ffd98a';
+  p.lineWidth = 1.4;
+  p.beginPath();
+  p.arc(73,58,10.5,0,Math.PI*2);
+  p.stroke();
+  p.lineWidth = 0.7;
+  p.strokeStyle = 'rgba(255,217,138,.65)';
+  p.beginPath();
+  p.moveTo(83.5,60);
+  p.bezierCurveTo(90,74, 86,90, 78,95);
+  p.stroke();
+  p.strokeStyle = 'rgba(255,255,255,.35)';
+  p.lineWidth = 0.6;
+  p.beginPath();
+  p.arc(73,58,10.5,-Math.PI*0.7,-Math.PI*0.3);
+  p.stroke();
+
+  // --- eyebrows ---
+  p.strokeStyle = 'rgba(50,30,50,.8)';
+  p.lineWidth = 1.3;
+  const browIn = expr.browIn;
+  p.beginPath();
+  p.moveTo(40, 47 - browIn*0.4);
+  p.quadraticCurveTo(47, 44 - browIn*0.3, 54, 47 + browIn);
+  p.stroke();
+  p.beginPath();
+  p.moveTo(66, 47 + browIn);
+  p.quadraticCurveTo(73, 44 - browIn*0.3, 80, 47 - browIn*0.4);
+  p.stroke();
+
+  // --- nose ---
+  p.strokeStyle = 'rgba(150,100,120,.4)';
+  p.lineWidth = 0.8;
+  p.beginPath();
+  p.moveTo(60,60);
+  p.quadraticCurveTo(58,68, 60,72);
+  p.stroke();
+
+  // --- mouth ---
+  const mY = 77;
+  const controlY = mY + expr.mouth;
+  const halfW = 5 * expr.mouthW;
+  p.strokeStyle = '#a3446e';
+  p.lineWidth = 1.1;
+  p.beginPath();
+  p.moveTo(60 - halfW, mY);
+  p.quadraticCurveTo(60, controlY, 60 + halfW, mY);
+  p.stroke();
+
+  p.fillStyle = 'rgba(255,140,190,.35)';
+  p.beginPath();
+  p.ellipse(60, mY, halfW*0.7, 1.0, 0, 0, Math.PI*2);
+  p.fill();
+
+  // fangs for sinister/manic
+  if(exprName === 'sinister' || exprName === 'manic'){
+    p.fillStyle = '#fff8e0';
+    p.beginPath();
+    p.moveTo(60 - halfW + 0.4, mY);
+    p.lineTo(60 - halfW + 1.8, mY);
+    p.lineTo(60 - halfW + 1.1, mY + 3);
+    p.closePath(); p.fill();
+    p.beginPath();
+    p.moveTo(60 + halfW - 1.8, mY);
+    p.lineTo(60 + halfW - 0.4, mY);
+    p.lineTo(60 + halfW - 1.1, mY + 3);
+    p.closePath(); p.fill();
+  }
+
+  // --- front hair (side part, silver) ---
+  p.fillStyle = '#d0cce0';
+  p.beginPath();
+  p.moveTo(60,12);
+  p.bezierCurveTo(34,12, 28,34, 30,52);
+  p.lineTo(33,44);
+  p.lineTo(38,56);
+  p.lineTo(42,42);
+  p.lineTo(48,54);
+  p.lineTo(54,40);
+  p.lineTo(58,50);
+  p.lineTo(62,38);
+  p.lineTo(66,52);
+  p.lineTo(72,42);
+  p.lineTo(78,54);
+  p.lineTo(82,44);
+  p.lineTo(88,52);
+  p.bezierCurveTo(90,34, 86,12, 60,12);
+  p.closePath();
+  p.fill();
+
+  p.strokeStyle = 'rgba(100,90,130,.6)';
+  p.lineWidth = 1;
+  p.beginPath();
+  p.moveTo(58,14);
+  p.quadraticCurveTo(52,28, 48,40);
+  p.stroke();
+
+  p.strokeStyle = 'rgba(255,250,255,.5)';
+  p.lineWidth = 0.8;
+  p.beginPath();
+  p.moveTo(44,20); p.quadraticCurveTo(38,32,36,46);
+  p.moveTo(70,20); p.quadraticCurveTo(78,32,80,46);
+  p.stroke();
+
+  // --- side strands ---
+  p.fillStyle = '#b8b2c8';
+  p.beginPath();
+  p.moveTo(30,40);
+  p.bezierCurveTo(24,72, 22,104, 20,126);
+  p.lineTo(32,124);
+  p.bezierCurveTo(33,98, 35,70, 38,48);
+  p.closePath(); p.fill();
+  p.beginPath();
+  p.moveTo(90,40);
+  p.bezierCurveTo(96,72, 98,104, 100,126);
+  p.lineTo(88,124);
+  p.bezierCurveTo(87,98, 85,70, 82,48);
+  p.closePath(); p.fill();
+
+  // --- earrings ---
+  p.fillStyle = '#ffd98a';
+  p.shadowColor = '#ffb347';
+  p.shadowBlur = 5;
+  p.beginPath(); p.arc(33, 76, 1.5, 0, Math.PI*2); p.fill();
+  p.beginPath(); p.arc(87, 76, 1.5, 0, Math.PI*2); p.fill();
+  p.shadowBlur = 0;
+
+  // --- choker ---
+  p.fillStyle = '#02100c';
+  p.fillRect(50,92,20,3);
+  p.fillStyle = danger ? '#ff2e5b' : '#ffd98a';
+  p.shadowColor = danger ? '#ff2e5b' : '#ffd98a';
+  p.shadowBlur = 6;
+  p.beginPath(); p.arc(60,94,2,0,Math.PI*2); p.fill();
+  p.shadowBlur = 0;
+
+  // --- floating gold coins ---
+  for(let i=0;i<6;i++){
+    const ang = t*0.001 + i*1.05;
+    const rad = 48 + Math.sin(t*0.0016 + i)*8;
+    const cx = 60 + Math.cos(ang)*rad*0.75;
+    const cy = 72 + Math.sin(ang*1.2)*rad*0.6;
+    const a = 0.3 + 0.5*Math.abs(Math.sin(t*0.002 + i));
+    p.fillStyle = `rgba(255,217,138,${a})`;
+    p.shadowColor = '#ffb347';
+    p.shadowBlur = 4;
+    p.fillRect(cx-1, cy-1, 2.2, 2.2);
+  }
+  p.shadowBlur = 0;
+
+  // --- extra glow for manic/sinister ---
+  if(exprName === 'manic' || exprName === 'sinister'){
+    p.shadowColor = danger ? '#ff2e5b' : '#ffd98a';
+    p.shadowBlur = 15;
+    p.strokeStyle = danger ? 'rgba(255,46,91,.35)' : 'rgba(255,217,138,.30)';
+    p.lineWidth = 0.8;
+    p.beginPath(); p.arc(47,58,9,0,Math.PI*2); p.stroke();
+    p.beginPath(); p.arc(73,58,9,0,Math.PI*2); p.stroke();
+    p.shadowBlur = 0;
+  }
+}
+
+function drawEye(cx, cy, w, h, blinking, col, col2, expr){
+  if(blinking){
+    p.strokeStyle = '#3a1030';
+    p.lineWidth = 1.6;
+    p.beginPath();
+    p.moveTo(cx - w/2, cy);
+    p.quadraticCurveTo(cx, cy + 3.4, cx + w/2, cy);
+    p.stroke();
+    return;
+  }
+  p.fillStyle = '#fff2fa';
+  p.beginPath();
+  p.ellipse(cx, cy, w/2, h/2, 0, 0, Math.PI*2);
+  p.fill();
+
+  p.save();
+  p.shadowColor = col;
+  p.shadowBlur = 9 * expr.glow;
+  const ig = p.createRadialGradient(cx, cy+1.5, 0.6, cx, cy+1, 6.4);
+  ig.addColorStop(0, '#fff0b8');
+  ig.addColorStop(0.42, col2);
+  ig.addColorStop(0.78, col);
+  ig.addColorStop(1, '#3a1005');
+  p.fillStyle = ig;
+  p.beginPath();
+  p.arc(cx, cy + 1, 6.4, 0, Math.PI*2);
+  p.fill();
+  p.restore();
+
+  p.fillStyle = '#08000a';
+  p.beginPath();
+  p.ellipse(cx, cy + 1, 1.7*expr.pupil, 4.8*expr.pupil, 0, 0, Math.PI*2);
+  p.fill();
+
+  p.fillStyle = '#ffffff';
+  p.beginPath(); p.arc(cx - 2.8, cy - 2.6, 1.9, 0, Math.PI*2); p.fill();
+  p.fillStyle = 'rgba(255,255,255,.65)';
+  p.beginPath(); p.arc(cx + 2.6, cy + 3.0, 0.9, 0, Math.PI*2); p.fill();
+
+  p.strokeStyle = '#280620';
+  p.lineWidth = 1.7;
+  p.beginPath();
+  p.ellipse(cx, cy, w/2, h/2, 0, Math.PI*1.04, Math.PI*1.96);
+  p.stroke();
+
+  p.strokeStyle = 'rgba(90,30,80,.55)';
+  p.lineWidth = 0.9;
+  p.beginPath();
+  p.ellipse(cx, cy, w/2, h/2, 0, Math.PI*0.10, Math.PI*0.90);
+  p.stroke();
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+let startTime = performance.now();
+
+function computeDefaultExpression(){
+  if(S.over && S.winFlag) return 'serene';
+  if(S.over) return 'worried';
+  if(S.exposure > 70) return 'worried';
+  if(S.unrest > 75) return 'angry';
+  if(S.vitality < 30) return 'worried';
+  if(S.control > 80) return 'sinister';
+  if(S.control > 50) return 'smug';
+  return 'neutral';
+}
+
+function loop(now){
+  drawBackground(now);
+
+  if(now > blinkTimer){
+    blinkUntil = now + 110;
+    blinkTimer = now + 2600 + Math.random()*2600;
+  }
+
+  const exprName = now < S.expressionUntil ? S.expression : computeDefaultExpression();
+  drawPortrait(now, EXP[exprName] || EXP.neutral, exprName);
+
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+function startGame(){
+  resetState();
+  buildStaticUI();
+  log('You are VESPER. The ledger is open. The hive is asleep.', 'hl');
+  log('Fill the hive to 99.9999999% before the light finds you.', '');
+  render();
+  blinkTimer = performance.now() + 2000;
+}
+
+startGame();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
