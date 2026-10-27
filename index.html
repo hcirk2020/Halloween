@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>THE BENEFICIAL OWNER — A Hive Simulation</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%}
   body{
     background:#05010a;color:#e8d9ff;
     font-family:"Courier New",ui-monospace,monospace;
@@ -18,7 +18,7 @@
   #scan{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.10;
     background:repeating-linear-gradient(0deg,rgba(255,255,255,.16) 0 1px,transparent 1px 3px)}
 
-  #app{position:relative;z-index:3;height:100vh;display:flex;flex-direction:column;
+  #app{position:relative;z-index:3;height:100vh;height:100dvh;display:flex;flex-direction:column;
     padding:10px;gap:10px}
 
   /* ---------- HEADER ---------- */
@@ -167,7 +167,8 @@
 
   /* ---------- OVERLAY ---------- */
   #overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;
-    justify-content:center;background:rgba(2,6,4,.90);backdrop-filter:blur(3px)}
+    justify-content:center;background:rgba(2,6,4,.90);backdrop-filter:blur(3px);
+    padding:16px}
   #overlay.hidden{display:none}
   .ov-box{max-width:640px;padding:44px 52px;text-align:center;
     border:1px solid rgba(255,180,90,.45);
@@ -184,6 +185,158 @@
     letter-spacing:4px;color:#ffe9a8;background:rgba(20,60,44,.7);
     border:1px solid rgba(255,180,90,.5);cursor:pointer;transition:.18s}
   .ov-box button:hover{background:rgba(30,90,64,.8);box-shadow:0 0 30px rgba(255,217,138,.5)}
+
+  /* ================================================
+     MOBILE / TOUCH LAYOUT
+     ================================================ */
+  button,.act{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+  @media (max-width: 780px) {
+    #app {
+      padding: 6px;
+      padding-top: max(6px, env(safe-area-inset-top));
+      padding-left: max(6px, env(safe-area-inset-left));
+      padding-right: max(6px, env(safe-area-inset-right));
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      gap: 6px;
+    }
+
+    header {
+      height: 38px;
+      padding: 0 10px;
+      gap: 4px;
+    }
+    .h-l { font-size: 9px; letter-spacing: 1px; }
+    .h-c { font-size: 9px; letter-spacing: 1px; }
+    .h-r { font-size: 11px; letter-spacing: 1px; }
+    header:before, header:after { width: 6px; height: 6px; }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto minmax(0, 1fr) 64px auto;
+      grid-template-areas:
+        "hive hive"
+        "portrait bars"
+        "actions actions"
+        "log log"
+        "footer footer";
+      gap: 6px;
+      min-height: 0;
+    }
+
+    #left, #right { display: contents; }
+
+    .hive-panel { grid-area: hive; padding: 8px 12px; }
+    .hive-label { font-size: 9px; letter-spacing: 3px; }
+    .hive-val { font-size: 18px; }
+    .hive-bar { height: 10px; margin-top: 6px; }
+    .hive-sub { font-size: 8.5px; margin-top: 3px; }
+
+    .portrait-panel {
+      grid-area: portrait;
+      padding: 6px 8px;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #portrait {
+      width: 64px;
+      height: 80px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 0 8px rgba(255,180,80,.28));
+    }
+    .p-name { font-size: 10px; letter-spacing: 2px; margin: 0; }
+    .p-sub  { font-size: 7px; letter-spacing: 0.5px; margin: 2px 0 0; text-align: left; }
+
+    .bars-panel {
+      grid-area: bars;
+      padding: 6px 8px;
+      gap: 3px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .bar-row { gap: 1px; }
+    .bar-top { font-size: 7.5px; letter-spacing: 0.5px; }
+    .bar-track { height: 4px; }
+    .chips { gap: 2px; margin-top: 2px; }
+    .chip  { font-size: 7px; letter-spacing: 0.5px; padding: 2px 2px; }
+
+    .actions {
+      grid-area: actions;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: auto;
+      gap: 6px;
+      min-height: 0;
+      padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .act { min-height: 86px; padding: 6px 8px; }
+    .act-tag { font-size: 7px; letter-spacing: 1.5px; }
+    .act-name { font-size: 10.5px; letter-spacing: 0.5px; }
+    .act-desc { font-size: 7.5px; line-height: 1.3; }
+    .act-foot { font-size: 9px; margin-top: 3px; }
+
+    .log-panel {
+      grid-area: log;
+      padding: 6px 8px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .log-title { font-size: 8px; letter-spacing: 2px; margin-bottom: 3px; padding-bottom: 2px; }
+    #log { font-size: 8.5px; line-height: 1.3; gap: 2px; overscroll-behavior: contain; }
+
+    .foot { grid-area: footer; gap: 8px; align-items: stretch; }
+    #endturn {
+      padding: 8px 16px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      min-height: 44px;
+      flex: 1 1 auto;
+    }
+    #aprow { font-size: 9px; letter-spacing: 1px; gap: 6px; flex: 0 0 auto; }
+    #aprow .pips { font-size: 12px; letter-spacing: 2px; }
+
+    .ov-box { padding: 24px 20px; max-width: 92vw; }
+    .ov-box h2 { font-size: 18px; letter-spacing: 4px; }
+    .ov-box p { font-size: 12px; line-height: 1.6; }
+    .ov-box .big { font-size: 15px; letter-spacing: 2px; }
+  }
+
+  /* very small phones */
+  @media (max-width: 380px) {
+    .h-l { display: none; }
+    .actions { gap: 5px; }
+    .act { min-height: 80px; padding: 5px 6px; }
+    .act-name { font-size: 10px; }
+    .act-desc { font-size: 7px; }
+  }
+
+  /* landscape phones — keep bars + actions, hide portrait/log */
+  @media (max-width: 950px) and (orientation: landscape) and (max-height: 500px) {
+    #app { padding: 4px; gap: 4px; }
+    header { height: 32px; }
+    main {
+      grid-template-columns: 200px 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "hive hive"
+        "bars actions"
+        "footer actions";
+      gap: 4px;
+    }
+    .portrait-panel, .log-panel { display: none; }
+    .hive-panel { grid-area: hive; padding: 6px 10px; }
+    .hive-bar { height: 8px; margin-top: 4px; }
+    .bars-panel { grid-area: bars; }
+    .actions { grid-area: actions; grid-template-columns: repeat(3, 1fr); }
+    .foot { grid-area: footer; flex-direction: column; gap: 4px; }
+    #endturn { padding: 8px 12px; font-size: 10px; }
+    #aprow { font-size: 9px; }
+  }
 </style>
 </head>
 <body>
@@ -363,7 +516,6 @@ const ACTIONS = [
     fx(){ const g = Math.round(S.control * 4); S.capital += g; S.exposure += 6; S.unrest += 4;
       return `+¤${g} siphoned · exposure +6 · unrest +4`; } },
 
-  /* ---------------- NEW ACTIONS ---------------- */
   { id:'coup', tag:'COUP', name:'The Iron Hand', cost:150, ap:2, expression:'manic',
     desc:'Send the boots into the palace. Once the tanks roll, no ledger is secret anymore.',
     req(){ return S.military >= 40; }, reqText:'requires military ≥ 40',
@@ -793,7 +945,6 @@ function drawPortrait(t, expr, exprName){
 
   const danger = S.exposure > 60;
 
-  // --- aura ---
   const aura = p.createRadialGradient(60,72,8,60,72,88);
   aura.addColorStop(0, danger ? 'rgba(255,40,80,.30)' : 'rgba(255,180,80,.26)');
   aura.addColorStop(0.6, danger ? 'rgba(120,10,40,.12)' : 'rgba(160,100,20,.10)');
@@ -801,7 +952,6 @@ function drawPortrait(t, expr, exprName){
   p.fillStyle = aura;
   p.fillRect(0,0,W2,H2);
 
-  // --- back hair (silver, straight, long) ---
   p.fillStyle = '#2a2635';
   p.beginPath();
   p.moveTo(60,12);
@@ -820,7 +970,6 @@ function drawPortrait(t, expr, exprName){
   p.moveTo(96,60); p.bezierCurveTo(100,90,102,120,108,148);
   p.stroke();
 
-  // --- high-collar power suit ---
   const suit = p.createLinearGradient(0,96,0,150);
   suit.addColorStop(0,'#0a2a24');
   suit.addColorStop(1,'#02100c');
@@ -832,7 +981,6 @@ function drawPortrait(t, expr, exprName){
   p.closePath();
   p.fill();
 
-  // gold collar trim
   p.strokeStyle = '#ffd98a';
   p.lineWidth = 1.2;
   p.beginPath();
@@ -840,18 +988,15 @@ function drawPortrait(t, expr, exprName){
   p.quadraticCurveTo(60,118,84,100);
   p.stroke();
 
-  // collar wings
   p.fillStyle = '#0f3a30';
   p.beginPath(); p.moveTo(36,100); p.lineTo(30,108); p.lineTo(44,112); p.closePath(); p.fill();
   p.beginPath(); p.moveTo(84,100); p.lineTo(90,108); p.lineTo(76,112); p.closePath(); p.fill();
 
-  // --- neck ---
   p.fillStyle = '#e0d0d0';
   p.fillRect(53,82,14,16);
   p.fillStyle = '#c0a8b0';
   p.fillRect(53,82,14,4);
 
-  // --- face (sharp, cold) ---
   p.fillStyle = '#f0e2e4';
   p.beginPath();
   p.moveTo(60,26);
@@ -862,7 +1007,6 @@ function drawPortrait(t, expr, exprName){
   p.closePath();
   p.fill();
 
-  // shading
   p.fillStyle = 'rgba(160,140,170,.16)';
   p.beginPath();
   p.moveTo(60,26);
@@ -872,25 +1016,21 @@ function drawPortrait(t, expr, exprName){
   p.closePath();
   p.fill();
 
-  // cheekbone shading
   p.fillStyle = 'rgba(140,100,120,.10)';
   p.beginPath(); p.ellipse(44,68,8,3,0.15,0,Math.PI*2); p.fill();
   p.beginPath(); p.ellipse(76,68,8,3,-0.15,0,Math.PI*2); p.fill();
 
-  // --- blush ---
   const blushA = expr.blush;
   p.fillStyle = `rgba(255,110,150,${0.30*blushA})`;
   p.beginPath(); p.ellipse(44,70,6,2.8,0,0,Math.PI*2); p.fill();
   p.beginPath(); p.ellipse(76,70,6,2.8,0,0,Math.PI*2); p.fill();
 
-  // --- eyes ---
   const blinking = t < blinkUntil;
   const eyeCol = danger ? '#ff2e5b' : '#ffd98a';
   const eyeCol2 = danger ? '#ffb0b0' : '#fff2b0';
   drawEye(47,58,13,15*expr.eyeH, blinking,eyeCol,eyeCol2,expr);
   drawEye(73,58,13,15*expr.eyeH, blinking,eyeCol,eyeCol2,expr);
 
-  // --- monocle on right eye ---
   p.strokeStyle = '#ffd98a';
   p.lineWidth = 1.4;
   p.beginPath();
@@ -908,7 +1048,6 @@ function drawPortrait(t, expr, exprName){
   p.arc(73,58,10.5,-Math.PI*0.7,-Math.PI*0.3);
   p.stroke();
 
-  // --- eyebrows ---
   p.strokeStyle = 'rgba(50,30,50,.8)';
   p.lineWidth = 1.3;
   const browIn = expr.browIn;
@@ -921,7 +1060,6 @@ function drawPortrait(t, expr, exprName){
   p.quadraticCurveTo(73, 44 - browIn*0.3, 80, 47 - browIn*0.4);
   p.stroke();
 
-  // --- nose ---
   p.strokeStyle = 'rgba(150,100,120,.4)';
   p.lineWidth = 0.8;
   p.beginPath();
@@ -929,7 +1067,6 @@ function drawPortrait(t, expr, exprName){
   p.quadraticCurveTo(58,68, 60,72);
   p.stroke();
 
-  // --- mouth ---
   const mY = 77;
   const controlY = mY + expr.mouth;
   const halfW = 5 * expr.mouthW;
@@ -945,7 +1082,6 @@ function drawPortrait(t, expr, exprName){
   p.ellipse(60, mY, halfW*0.7, 1.0, 0, 0, Math.PI*2);
   p.fill();
 
-  // fangs for sinister/manic
   if(exprName === 'sinister' || exprName === 'manic'){
     p.fillStyle = '#fff8e0';
     p.beginPath();
@@ -960,7 +1096,6 @@ function drawPortrait(t, expr, exprName){
     p.closePath(); p.fill();
   }
 
-  // --- front hair (side part, silver) ---
   p.fillStyle = '#d0cce0';
   p.beginPath();
   p.moveTo(60,12);
@@ -995,7 +1130,6 @@ function drawPortrait(t, expr, exprName){
   p.moveTo(70,20); p.quadraticCurveTo(78,32,80,46);
   p.stroke();
 
-  // --- side strands ---
   p.fillStyle = '#b8b2c8';
   p.beginPath();
   p.moveTo(30,40);
@@ -1010,7 +1144,6 @@ function drawPortrait(t, expr, exprName){
   p.bezierCurveTo(87,98, 85,70, 82,48);
   p.closePath(); p.fill();
 
-  // --- earrings ---
   p.fillStyle = '#ffd98a';
   p.shadowColor = '#ffb347';
   p.shadowBlur = 5;
@@ -1018,7 +1151,6 @@ function drawPortrait(t, expr, exprName){
   p.beginPath(); p.arc(87, 76, 1.5, 0, Math.PI*2); p.fill();
   p.shadowBlur = 0;
 
-  // --- choker ---
   p.fillStyle = '#02100c';
   p.fillRect(50,92,20,3);
   p.fillStyle = danger ? '#ff2e5b' : '#ffd98a';
@@ -1027,7 +1159,6 @@ function drawPortrait(t, expr, exprName){
   p.beginPath(); p.arc(60,94,2,0,Math.PI*2); p.fill();
   p.shadowBlur = 0;
 
-  // --- floating gold coins ---
   for(let i=0;i<6;i++){
     const ang = t*0.001 + i*1.05;
     const rad = 48 + Math.sin(t*0.0016 + i)*8;
@@ -1041,7 +1172,6 @@ function drawPortrait(t, expr, exprName){
   }
   p.shadowBlur = 0;
 
-  // --- extra glow for manic/sinister ---
   if(exprName === 'manic' || exprName === 'sinister'){
     p.shadowColor = danger ? '#ff2e5b' : '#ffd98a';
     p.shadowBlur = 15;
